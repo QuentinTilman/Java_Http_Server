@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -53,28 +54,16 @@ public class clientHandler implements Runnable{
 			while(in.ready()) {
 				int theCharNum = in.read();
 				char theChar = (char) theCharNum;
-				if(theChar == ' ') {
-					headerTokens.add(token);
+				token += theChar;
+				if(theChar == ' ' || theChar == '=') {
+					headerTokens.add(token.strip());
 					token ="";
 				}
-				token += theChar;
-				
 			}
-			System.out.print(headerTokens.toString());
+			headerTokens.add(token);
 			String method = headerTokens.get(0);
 			if (!method.equals("GET")  && !method.equals("HEAD") && !method.equals("PUT") && !method.equals("POST")) {
-
-				long contentLength= Files.size(Paths.get(ROOT+ERROR_FILE_501));
-				String contentMimeType = "text/html";
-				out.writeBytes("HTTP/1.1 501 Not Implemented/n");
-				out.writeBytes("Server: Java HTTP Server from Delmeiren Jonathan & Tilman Quentin : 1.0/n");
-				out.writeBytes("Date: " + new Date()+"/n");
-				out.writeBytes("Content-type: " + contentMimeType+"/n");
-				out.writeBytes("Content-length: " + contentLength+"/n");
-				out.writeBytes("/n");
-				out.flush();
-				Files.copy(Paths.get(ROOT+ERROR_FILE_501), out);
-				out.flush();
+				notImplementedError(out);
 			}
 			else 
 			{
@@ -92,7 +81,6 @@ public class clientHandler implements Runnable{
 					else
 					{
 						long contentLength= Files.size(Paths.get(ROOT+path));
-						
 						out.writeBytes("HTTP/1.1 200 OK\r\n");
 						out.writeBytes("Server: Java HTTP Server from Delmeiren Jonathan & Tilman Quentin : 1.0\n");
 						out.writeBytes("Date: " + new Date()+"\n");
@@ -107,19 +95,25 @@ public class clientHandler implements Runnable{
 				}
 				else if(method.equals("PUT"))
 				{
+					
 					out.writeBytes("HTTP/1.1 200 OK\r\n");
 					out.writeBytes("Content-Type: text/html\r\n");
 					out.flush();
 				}
 				else if(method.equals("HEAD")){
-					out.writeBytes("HTTP/1.1 200 OK \r\n");
-					out.writeBytes("Content-Type: text/html\r\n\r\n");
+					out.writeBytes("HTTP/1.1 200 OK\r\n");
+					out.writeBytes("Server: Java HTTP Server from Delmeiren Jonathan & Tilman Quentin : 1.0\n");
+					out.writeBytes("Date: " + new Date()+"\n");
+					out.writeBytes("Content-Type: "+getMimeType(".html")+"\r\n");
+					out.writeBytes("\n");
+					out.flush();
 				}
 				else if(method.equals("POST"))
 				{
 					try {
-						int position = headerTokens.indexOf("posts");
-						String message = headerTokens.get(position);
+						String message = headerTokens.get(headerTokens.size()-1);
+						message = message.replace("=", "");
+						message = message.replace("+", " ");
 						String contentToAdd = 
 								" <tr>\r\n" + 
 								"    <td>"+new Date()+"</td>\r\n" + 
@@ -138,33 +132,38 @@ public class clientHandler implements Runnable{
 						out.flush();
 						Files.copy(Paths.get(ROOT+POST_FILE), out);
 						out.flush();
+						
 					}
 					catch(Exception e)
 					{
 						e.printStackTrace();
-						out.writeBytes("HTTP/1.1 304 Not Modified\r\n");
-						out.writeBytes("Server: Java HTTP Server from Delmeiren Jonathan & Tilman Quentin : 1.0");
-						out.writeBytes("Content-Type: text/html\r\n\n");
-						out.writeBytes("Date: " + new Date());
-						out.writeBytes("\n");
-						out.flush();
-						Files.copy(Paths.get(ROOT+ERROR_FILE_304), out);
-						out.flush();
-						out.close();
-
 					}
 				}
 			}
 			request.close();
 		}
 		catch(Exception e) {
-			fileNotFound(in,out);
+			try {
+				fileNotFound(in,out);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			e.printStackTrace();
 		}
 	}
-
-	public void fileNotFound(BufferedReader in , DataOutputStream out) {
-		try {
+	public void notModifiedError(DataOutputStream out) throws IOException {
+			out.writeBytes("HTTP/1.1 304 Not Modified\r\n");
+			out.writeBytes("Server: Java HTTP Server from Delmeiren Jonathan & Tilman Quentin : 1.0");
+			out.writeBytes("Content-Type: text/html\r\n\n");
+			out.writeBytes("Date: " + new Date()+"\n");
+			out.writeBytes("\n");
+			out.flush();
+			Files.copy(Paths.get(ROOT+ERROR_FILE_304), out);
+			out.flush();
+			out.close();
+	}
+	public void fileNotFound(BufferedReader in , DataOutputStream out) throws IOException {
 			long contentLength= Files.size(Paths.get("D:\\www\\404.html"));
 			out.writeBytes("HTTP/1.1 404 \r\n");
 			out.writeBytes("Content-Type: text/html\r\n");
@@ -173,9 +172,20 @@ public class clientHandler implements Runnable{
 			out.writeBytes(Files.readString(Paths.get(ROOT+ERROR_FILE_404)));//AANPASSEN
 			out.flush();
 			out.close();
-		}
-		catch(Exception e) {
-		}
+	}
+	
+	public void notImplementedError(DataOutputStream out) throws IOException {
+		long contentLength= Files.size(Paths.get(ROOT+ERROR_FILE_501));
+		String contentMimeType = "text/html";
+		out.writeBytes("HTTP/1.1 501 Not Implemented/n");
+		out.writeBytes("Server: Java HTTP Server from Delmeiren Jonathan & Tilman Quentin : 1.0/n");
+		out.writeBytes("Date: " + new Date()+"/n");
+		out.writeBytes("Content-type: " + contentMimeType +"/n");
+		out.writeBytes("Content-length: " + contentLength +"/n");
+		out.writeBytes("/n");
+		out.flush();
+		Files.copy(Paths.get(ROOT+ERROR_FILE_501), out);
+		out.flush();
 	}
 	
 	public String getMimeType(String path) {
