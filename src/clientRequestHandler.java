@@ -9,11 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Date;
 
 
 
 public class clientRequestHandler implements Runnable {
 	private Socket request;
+	private static int nbOfRequests = 0;
 
 	public clientRequestHandler(Socket r) {
 		this.setRequest(r);
@@ -22,18 +24,26 @@ public class clientRequestHandler implements Runnable {
 	@SuppressWarnings("unused")
 	@Override
 	public void run() {
-		
+
+		nbOfRequests += 1;
+		System.out.print("request nb : " +nbOfRequests+"\n");
+		System.out.println("thread started opened. (" + new Date() + ")");
 		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(getRequest().getInputStream()));
-			DataOutputStream out = new DataOutputStream (getRequest().getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(request.getInputStream()));
+			DataOutputStream out = new DataOutputStream (request.getOutputStream());
 			String header = "";
+			
 			while(in.ready()) {
 				int theCharNum = in.read();
 				char theChar = (char) theCharNum;
 				header += theChar;
 			}
+			System.out.println("While is done. (" + new Date() + ")");
 			String method = header.split(" ")[0];
-			if(method.equals("GET"))
+			if (!method.equals("GET")  || !method.equals("HEAD") || !method.equals("PUT") || !method.equals("POST")) {
+				out.writeBytes("HTTP/1.1 504 Not Implemented\r\n");
+			}
+			else if(method.equals("GET"))
 			{
 				//gebruik maken van StringTokenizer ???
 				try {
@@ -136,7 +146,9 @@ public class clientRequestHandler implements Runnable {
 					String path = header.split(" ")[1];
 					String[] items = header.split(" ");
 					String arguments = items[items.length - 1];
-					Files.writeString(Paths.get("D:\\www"+path),arguments+"\n" ,StandardOpenOption.APPEND);
+					String input = arguments.split("=")[2];
+					input = input.replace("+", " ");
+					Files.writeString(Paths.get("D:\\www"+path),"<p>"+input+"</p> \n" ,StandardOpenOption.APPEND);
 					long contentLength= Files.size(Paths.get("D:\\www"+path));
 					out.writeBytes("HTTP/1.1 200 OK\r\n");
 					out.writeBytes("Content-Type: text/html\r\n");
@@ -152,6 +164,7 @@ public class clientRequestHandler implements Runnable {
 
 				}
 			}
+			System.out.println("file is sended. (" + new Date() + ")");
 			out.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
