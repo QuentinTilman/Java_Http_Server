@@ -48,12 +48,12 @@ public class clientHandler implements Runnable{
 			out = new DataOutputStream (request.getOutputStream());
 			String header = "";
 
-			/*while(in.ready()) {
+			while(in.ready()) {
 				int theCharNum = in.read();
 				char theChar = (char) theCharNum;
 				header += theChar;
-			}*/
-			header = in.readLine();
+			}
+			
 			System.out.println("While is done. (" + new Date() + ")");
 			String[] headerTokens = header.split(" ");
 			String method = headerTokens[0];
@@ -81,6 +81,7 @@ public class clientHandler implements Runnable{
 						out.writeBytes("HTTP/1.1 200 OK\r\n");
 						out.writeBytes("Content-Type: text/html\r\n");
 						out.writeBytes("Content-Length: "+contentLength+"\r\n\r\n");
+						out.flush();
 						Files.copy(Paths.get("D:\\www\\index.html"), out);
 						out.flush();
 					}
@@ -117,6 +118,7 @@ public class clientHandler implements Runnable{
 			out.writeBytes("Content-Length: "+contentLength+"\r\n\r\n");
 			out.writeBytes(Files.readString(Paths.get(ROOT+ERROR_FILE_404)));//AANPASSEN
 			out.flush();
+			out.close();
 		}
 		catch(Exception e) {
 		}
