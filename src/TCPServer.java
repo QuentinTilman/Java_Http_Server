@@ -1,13 +1,13 @@
 
 import java.net.*;
-public class Server {
+public class TCPServer {
 	static final int PORT = 80;
 	public static void main(String[] args) throws Exception{
 		try {
 			ServerSocket server = new ServerSocket(PORT);
-			System.out.print("Server is listining on port "+PORT+"...");
+			System.out.print("Server started listining on port "+PORT+"...");
 			while(true) {
-				Thread thread = new Thread(new clientHandler(server.accept()));
+				Thread thread = new Thread(new HTTP_Application(server.accept()));
 				thread.start();
 			}
 		}
