@@ -1,7 +1,8 @@
 
 import java.net.*;
+import java.nio.channels.SocketChannel;
 public class TCPServer {
-	static final int PORT = 80;
+	static final int PORT = 3001;
 	public static void main(String[] args) throws Exception{
 		try {
 			ServerSocket server = new ServerSocket(PORT);
