@@ -4,6 +4,9 @@ import java.nio.file.*;
 import java.security.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.*;
+
+import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 
 //optimized (handles request is 6ms instead of 4000ms)
 public class HTTP_Application implements Runnable {
@@ -17,7 +20,8 @@ public class HTTP_Application implements Runnable {
 	static final String POST_FILE = "post.html";
 	private final Date firstRequestTime;
 	static final int keep_Alive = 1000;
-
+	private int requestInOneConnection = 0;
+	
 	public HTTP_Application(Socket r) throws IOException {
 		this.setRequest(r);
 		this.firstRequestTime = new Date();
@@ -46,7 +50,7 @@ public class HTTP_Application implements Runnable {
 		} catch (IOException e) {
 			try {
 				e.printStackTrace();
-				System.out.println("connection for " + clientConnection.getInetAddress() + " has been closed");
+				System.out.println("\n connection for " + clientConnection.getInetAddress() + " has been closed");
 				clientConnection.close();
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -65,13 +69,16 @@ public class HTTP_Application implements Runnable {
 				System.out.println(tokens);
 			}
 			if (headerTokens.size() == 0) {
-
+				
 			} else {
+				requestInOneConnection += 1;
+				System.out.print("\n requests:" + requestInOneConnection);
 				System.out.print("\n--------------------------------------\n");
-				if (!(headerTokens.contains("Host:") || headerTokens.contains("host:")
-						|| headerTokens.contains("HOST:"))) {
+				
+				if(checkIfValidRequest(headerTokens)) {
 					getBadRequestHeader(in, out);
 				}
+				
 				String method = headerTokens.get(0);
 				if (!method.equals("GET") && !method.equals("HEAD") && !method.equals("PUT")
 						&& !method.equals("POST")) {
@@ -99,34 +106,13 @@ public class HTTP_Application implements Runnable {
 							} else {
 								getHeader(out);
 								getFile(out, path,ETag,file);
-								out.flush();
-								Files.copy(Paths.get("D:\\www\\" + path), out);
-								out.flush();
-								
 							}
 
 					} else if (method.equals("PUT")) {
-						String filename = headerTokens.get(headerTokens.indexOf("filename=") + 1).replace('"', ' ')
-								.strip();
-						String contentType = headerTokens.get(headerTokens.lastIndexOf("Content-Type:") + 1);
-						List<String> fileContent = headerTokens.subList(headerTokens.lastIndexOf("Content-Type:") + 2,
-								headerTokens.size() - 1);
-
-						if (!checkIfValidFile(filename)) {
-							clientConnection.close();
-						}
-						FileWriter myWriter = new FileWriter(ROOT + "/files/" + filename);
-						myWriter.write(fileContent.toString());
-						myWriter.close();
-						String contentToAdd = " <tr>\r\n" + "    <td>" + new Date() + "</td>\r\n" + "    <td>"
-								+ clientConnection.getInetAddress() + "</td>\r\n" + "	<td> <a href=\"/files/"
-								+ filename + "\"> " + filename + "</a> </td>\r\n" + "  </tr>";
-
-						Files.writeString(Paths.get(ROOT + FILES_LIST), contentToAdd, StandardOpenOption.APPEND);
-
+						putMethod(headerTokens);
 						getHeader(out);
+						out.writeBytes("\r\n");
 						out.flush();
-						out.close();
 
 					} else if (method.equals("HEAD")) {
 						getHeader(out);
@@ -138,10 +124,7 @@ public class HTTP_Application implements Runnable {
 						getHeader(out);
 						File file = new File(ROOT + POST_FILE);
 						String ETag = getEtag(file);
-						getFile(out, path,ETag,file);
-						out.flush();
-						Files.copy(Paths.get("D:\\www\\" + path), out);
-						out.flush();
+						getFile(out, POST_FILE,ETag,file);
 					}
 				}
 			}
@@ -153,6 +136,7 @@ public class HTTP_Application implements Runnable {
 			getNotImplementedHeader(out);
 		}
 	}
+	
 	
 	private ArrayList<String> getRequestTokens(BufferedReader in) throws IOException {
 		ArrayList<String> headerTokens = new ArrayList<String>();
@@ -175,6 +159,8 @@ public class HTTP_Application implements Runnable {
 		headerTokens.trimToSize();
 		return headerTokens;
 	}
+	
+	
 	private void getFile(DataOutputStream out,String path,String ETag,File file) throws IOException {
 		
 		long contentLength = file.length();
@@ -188,12 +174,15 @@ public class HTTP_Application implements Runnable {
 		out.writeBytes("ETag:" + ETag + "\r\n");
 		out.writeBytes("Last-Modified:" + dateFormat.format(modifiedSince) + "\r\n");
 		out.writeBytes("\r\n");
+		out.flush();
+		Files.copy(Paths.get(ROOT + path), out);
+		out.flush();
 	}
 	
 	private String getEtag(File file) throws IOException {
 		int fileLength = (int) file.length();
 		byte[] fileData = readFileData(file, fileLength);
-		return getEtag(fileData);
+		return calculateEtag(fileData);
 	}
 
 	private byte[] readFileData(File file, int fileLength) throws IOException {
@@ -210,7 +199,7 @@ public class HTTP_Application implements Runnable {
 		return fileData;
 	}
 
-	private String getEtag(byte[] fileData) {
+	private String calculateEtag(byte[] fileData) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-256");
 			md.update(fileData);
@@ -252,6 +241,39 @@ public class HTTP_Application implements Runnable {
 
 		Files.writeString(Paths.get(ROOT + POST_FILE), contentToAdd + "\n", StandardOpenOption.APPEND);
 		long contentLength = Files.size(Paths.get(ROOT + POST_FILE));
+	}
+	
+	private void putMethod(ArrayList<String> headerTokens) throws Exception {
+		String filename = headerTokens.get(headerTokens.indexOf("filename=") + 1).replace('"', ' ')
+				.strip();
+		
+		if (!checkIfValidFile(filename)) {
+			throw new Exception();
+		}
+		else {
+			String contentType = headerTokens.get(headerTokens.lastIndexOf("Content-Type:") + 1);
+			List<String> fileContent = headerTokens.subList(headerTokens.lastIndexOf("Content-Type:") + 2,
+					headerTokens.size() - 1);
+
+			boolean exist = Files.exists(Path.of(ROOT + "/files/" + filename), LinkOption.NOFOLLOW_LINKS);
+			FileWriter myWriter = new FileWriter(ROOT + "/files/" + filename);
+			for (String string : fileContent) {
+				myWriter.write(string+" ");
+			}
+			myWriter.close();
+			if(!exist) {
+				updateFiles(filename);
+			}
+		}
+		
+	}
+	
+	private void updateFiles(String filename) throws IOException {
+		String contentToAdd = " <tr>\r\n" + "    <td>" + new Date() + "</td>\r\n" + "    <td>"
+				+ clientConnection.getInetAddress() + "</td>\r\n" + "	<td> <a href=\"/files/"
+				+ filename + "\"> " + filename + "</a> </td>\r\n" + "  </tr>";
+
+		Files.writeString(Paths.get(ROOT + FILES_LIST), contentToAdd, StandardOpenOption.APPEND);
 	}
 	
 	private void getNotModifiedHeader(DataOutputStream out) throws IOException {
@@ -306,7 +328,6 @@ public class HTTP_Application implements Runnable {
 		out.flush();
 		Files.copy(Paths.get(ROOT + ERROR_FILE_501), out);
 		out.flush();
-		out.close();
 	}
 
 	private String getMimeType(String path) {
@@ -327,8 +348,17 @@ public class HTTP_Application implements Runnable {
 	}
 
 	private boolean checkIfValidFile(String filename) {
-		if (filename.endsWith("txt") || filename.equals("html") || filename.equals("rtf"))
+		if (filename.endsWith("txt") || filename.endsWith("html") || filename.endsWith("rtf"))
 			return true;
 		return false;
+	}
+	
+	private boolean checkIfValidRequest(ArrayList<String> headerTokens) {
+		if (!(headerTokens.contains("Host:"))) {
+			return false;
+		}
+		if(headerTokens.get(headerTokens.lastIndexOf("Host:")+1).equals(headerTokens.get(headerTokens.indexOf("Host:")+1)))
+			return false;
+		return true;
 	}
 }
