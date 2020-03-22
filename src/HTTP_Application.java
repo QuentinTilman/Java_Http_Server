@@ -22,6 +22,7 @@ public class HTTP_Application implements Runnable {
 	static final String POST_PAGE = "post.html";
 	private final Date firstRequestTime;
 	static final int keep_Alive = 1000;
+	private static final String ERROR_FILE_500 = "/errors/500.html";
 	private int requestInOneConnection = 0;
 
 	public HTTP_Application(Socket r) throws IOException {
@@ -73,12 +74,14 @@ public class HTTP_Application implements Runnable {
 		try {
 			in = new BufferedReader(new InputStreamReader(clientConnection.getInputStream()));
 			out = new DataOutputStream(clientConnection.getOutputStream());
+			
 			String header = "";
 			while (in.ready()) {
 				int theCharNum = in.read();
 				char theChar = (char) theCharNum;
 				header += theChar;
 			}
+			System.out.print(header);
 			HashMap<String, String> headerTokens = getRequestHeader(header);
 			if (headerTokens.size() == 0) {
 
@@ -153,8 +156,23 @@ public class HTTP_Application implements Runnable {
 			getFileNotFoundHeader(in, out);
 		} catch (Exception e) {
 			e.printStackTrace();
-			getNotImplementedHeader(out);
+			getServerError(out);
 		}
+	}
+
+	private void getServerError(DataOutputStream out) throws IOException {
+		long contentLength = Files.size(Paths.get(ROOT + ERROR_FILE_500));
+		out.writeBytes("HTTP/1.1 500 Server Error \r\n");
+		out.writeBytes("Date: " + new Date() + "\r\n");
+		out.writeBytes("Server: Java HTTP Server from Delmeiren Jonathan & Tilman Quentin : 1.0\r\n");
+		out.writeBytes("Content-Length: " + contentLength + "\r\n");
+		out.writeBytes("Content-Type: text/html; charset=UTF-8 \r\n");
+		out.writeBytes("Connection: closed\r\n");
+		out.writeBytes("\r\n");
+		out.flush();
+		out.writeBytes(Files.readString(Paths.get(ROOT + ERROR_FILE_500)));// AANPASSEN
+		out.flush();
+		
 	}
 
 	/**
@@ -168,7 +186,6 @@ public class HTTP_Application implements Runnable {
 		if (header.equals("")) {
 		} else {
 			long start = new Date().getTime();
-			System.out.print(header);
 			String method = header.split(" ")[0];
 			headerTokens.put("method", method);
 			headerTokens.put("path", header.split(" ")[1]);
@@ -349,8 +366,8 @@ public class HTTP_Application implements Runnable {
 				+ "  </tr>";
 		Files.writeString(Paths.get(ROOT + POST_FILE), contentToAdd.replace("+", " ") + "\n",
 				StandardOpenOption.APPEND);
-		long contentLength = Files.size(Paths.get(ROOT + POST_FILE));
-
+		File file = new File(ROOT + POST_FILE);
+		file.setLastModified(new Date().getTime());
 	}
 
 	private String getBodyRequest(String requestHeaders, String boundary) {
@@ -385,10 +402,10 @@ public class HTTP_Application implements Runnable {
 	//		formValues.putAll(getBodyTokens(body.toString(), boundary));
 	//	}
 	
-	private HashMap<String, String> getBodyTokensPUT(String body, String boundary) {
+	private HashMap<String, String> getBodyTokensPUT(String body, String boundary,String path) {
 		HashMap<String, String> formValues = new HashMap<String, String>();
 		CharSequence bodySeq = null;
-		if (boundary != null) {
+		if (!boundary.equals("")) {
 			bodySeq = body.subSequence(body.indexOf(boundary) + boundary.length(), body.lastIndexOf(boundary));
 			Pattern fn = Pattern.compile("filename=(.*)");
 			Matcher fnm = fn.matcher(bodySeq);
@@ -401,17 +418,20 @@ public class HTTP_Application implements Runnable {
 				formValues.put("Content-Type", ctm.group(1));
 			}
 			formValues.put("Body", body);
-		} 
+		}
+		else {
+			formValues.put("filename", path);
+			formValues.put("Body", body);
+			
+		}
 		return formValues;
 	}
 
 	
-
 	private void putMethod(HashMap<String, String> headerTokens) throws Exception {
 		File file = new File(ROOT + FILES_PAGE);
 		file.setLastModified(new Date().getTime());
-		HashMap<String, String> tokens = getBodyTokensPUT(headerTokens.get("Body"), headerTokens.get("boundary"));
-
+		HashMap<String, String> tokens = getBodyTokensPUT(headerTokens.get("Body"), headerTokens.get("boundary"),headerTokens.get("path"));
 		if (!checkIfValidFile(tokens.get("filename"))) {
 			throw new Exception();
 		} else {
@@ -436,7 +456,7 @@ public class HTTP_Application implements Runnable {
 
 		Files.writeString(Paths.get(ROOT + FILES_LIST), contentToAdd, StandardOpenOption.APPEND);
 	}
-
+//------------------------------------------------ERRORS--------------------------------------------------------------
 	private void getNotModifiedHeader(DataOutputStream out) throws IOException {
 		System.out.print("not modified");
 		out.writeBytes("HTTP/1.1 304 Not Modified\r\n");
