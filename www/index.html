@@ -1,0 +1,217 @@
+<!DOCTYPE HTML>
+<!--
+	Paradigm Shift by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+
+<head>
+	<title>Computer Networking WebTranslater</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<meta name="description" content="" />
+	<meta name="keywords" content="" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+</head>
+
+<body class="is-preload">
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Intro -->
+		<section class="intro">
+			<header>
+				<h1>Computer Networking WebTranslater</h1>
+				<p>A wonderful assignment of KU LEUVEN</a></p>
+				<ul class="actions">
+					<li><a href="#methods" class="arrow scrolly"><span class="label">Next</span></a></li>
+				</ul>
+			</header>
+			<div class="content">
+			<br>
+			<ul class="actions">
+				<li><a href="/index.html" class="button primary large">Supported Methods</a></li>
+				<li><a href="/post.html" class="button large">POSTS</a></li>
+			</ul>
+			<ul class="actions">
+				<li><a href="/file.html" class="button large">FILES</a></li>
+				<li><a href="/images.html" class="button primary large">IMAGES</a></li>
+			</ul>
+			</div>
+		</section>
+		<!-- Section -->
+		<section>
+			<header>
+				<h2>ASSIGNMENT</h2>
+			</header>
+			<div class="content">
+				<p><strong>CN WebTranslater Assignment</strong> </p>
+				<p>This assignment had as purpose to program an HTTP application on a TCP Server using only the Socket library of Java.
+					Doing this we propose different METHODS that are supported on our server.
+				 </p>
+				
+			</div>
+		</section>
+		<!-- Section -->
+		<section id="methods">
+			<header>
+				<h2>Methods</h2>
+			</header>
+			<div class="content">
+				<p><strong>HTTP</strong> is a pretty extensible protocol.
+					It relies on a few basic concepts like the notion of resources and URIs,
+					a simple structure of messages, and a client-server structure for the communication flow.
+					On top of these basic concepts, numerous extensions have appeared over the years,
+					adding new functionality and new semantics by creating new HTTP methods or headers.</p>
+
+				<!-- Section -->
+
+			</div>
+		</section>
+
+		<section>
+			<header>
+				<h3>GET</h3>
+			</header>
+			<div class="content">
+				<p> The GET method requests transfer of a current selected representation
+					for the target resource. GET is the primary mechanism of information
+					retrieval and the focus of almost all performance optimizations.
+					Hence, when people speak of retrieving some identifiable information
+					via HTTP, they are generally referring to making a GET request.</p>
+			</div>
+		</section>
+		<!-- Section -->
+		<section>
+			<header>
+				<h3>HEAD</h3>
+
+			</header>
+			<div class="content">
+				<p>The HEAD method is identical to GET except that the server MUST NOT
+					send a message body in the response (i.e., the response terminates at
+					the end of the header section). The server SHOULD send the same
+					header fields in response to a HEAD request as it would have sent if
+					the request had been a GET, except that the payload header fields
+					(Section 3.3) MAY be omitted. This method can be used for obtaining
+					metadata about the selected representation without transferring the
+					representation data and is often used for testing hypertext links for
+					validity, accessibility, and recent modification.</p>
+			</div>
+		</section>
+
+		<!-- Section -->
+		<section>
+			<header>
+				<h3>POST</h3>
+
+			</header>
+			<div class="content">
+				<p> The POST method requests that the target resource process the
+					representation enclosed in the request according to the resource's
+					own specific semantics. For example, POST is used for the following
+					functions (among others):
+
+					o Providing a block of data, such as the fields entered into an HTML
+					form, to a data-handling process;
+
+
+					o Posting a message to a bulletin board, newsgroup, mailing list,
+					blog, or similar group of articles;
+
+					o Creating a new resource that has yet to be identified by the
+					origin server; and
+
+					o Appending data to a resource's existing representation(s).
+				</p>
+			</div>
+		</section>
+		<section>
+			<header>
+				<h3>PUT</h3>
+
+			</header>
+			<div class="content">
+				<p>The PUT method requests that the state of the target resource be
+					created or replaced with the state defined by the representation
+					enclosed in the request message payload. A successful PUT of a given
+					representation would suggest that a subsequent GET on that same
+					target resource will result in an equivalent representation being
+					sent in a 200 (OK) response. However, there is no guarantee that
+
+					such a state change will be observable, since the target resource
+					might be acted upon by other user agents in parallel, or might be
+					subject to dynamic processing by the origin server, before any
+					subsequent GET is received. A successful response only implies that
+					the user agent's intent was achieved at the time of its processing by
+					the origin server.</p>
+			</div>
+		</section>
+		
+		<!-- <section>
+			<header>
+				<h2>PUT A FILE</h2>
+			</header>
+			<div class="content">
+				<form method="POST" enctype="multipart/form-data">
+					<div class="fields">
+						<div class="field half">
+							<label for="file">File</label>
+							<input type="file" name="file" id="file" value="" placeholder="Select File" />
+						</div>
+						</br>
+						<ul class="actions">
+							<li><input type="submit" value="Send Message" class="primary" /></li>
+							<li><input type="reset" value="Reset" /></li>
+						</ul>
+				</form>
+			</div>
+		</section> -->
+	
+		<!-- Section -->
+		<section>
+			<header>
+				<h2>POST A COMMENT</h2>
+			</header>
+			<div class="content">
+				<form method="POST" action="#">
+					<div class="fields">
+						<div class="field">
+							<label for="message">Message</label>
+							<textarea name="message" id="message" placeholder="Enter your message" rows="6"></textarea>
+						</div>
+					</div>
+					<ul class="actions">
+						<li><input type="submit" value="Send Message" class="primary" /></li>
+						<li><input type="reset" value="Reset" /></li>
+					</ul>
+				</form>
+			</div>
+		</section>
+		<section class="footer">
+			<footer>
+				<ul class="items">
+					<li>
+						<h3>AUTHORS</h3>
+						<a href="#">QUENTIN TILMAN & JONOTHAN DELMEIREN</a>
+					</li>
+				</ul>
+			</footer>
+		</section>
+		<div class="copyright">&copy; Untitled. All rights reserved. Design: <a href="https://html5up.net">HTML5 UP</a>.
+		</div>
+	</div>
+
+	<!-- Scripts -->
+	<script src="assets/js/jquery.min.js"></script>
+	<script src="assets/js/jquery.scrolly.min.js"></script>
+	<script src="assets/js/browser.min.js"></script>
+	<script src="assets/js/breakpoints.min.js"></script>
+	<script src="assets/js/util.js"></script>
+	<script src="assets/js/main.js"></script>
+
+</body>
+
+</html>

@@ -11,7 +11,7 @@ import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 //optimized (handles request is 6ms instead of 4000ms)
 public class HTTP_Application implements Runnable {
 	private Socket clientConnection;
-	static final String ROOT = "D:\\www\\";
+	static final String ROOT = ".\\www\\";
 	static final String DEFAULT_PAGE = "index.html";
 	static final String ERROR_FILE_404 = "/errors/404.html";
 	static final String ERROR_FILE_400 = "/errors/400.html";
@@ -87,7 +87,6 @@ public class HTTP_Application implements Runnable {
 
 			} else {
 				requestInOneConnection += 1;
-				// System.out.print("\n requests:" + requestInOneConnection);
 				System.out.print("\n--------------------------------------\n");
 
 				if (!checkIfValidRequest(headerTokens)) {
@@ -396,11 +395,6 @@ public class HTTP_Application implements Runnable {
 		}
 		return formValues;
 	}
-//	Pattern b = Pattern.compile(boundary);
-	//  Matcher bm = b.matcher(body);
-	//	while(bm.find()) {
-	//		formValues.putAll(getBodyTokens(body.toString(), boundary));
-	//	}
 	
 	private HashMap<String, String> getBodyTokensPUT(String body, String boundary,String path) {
 		HashMap<String, String> formValues = new HashMap<String, String>();
